@@ -1,4 +1,7 @@
-import React, { useState } from "react"
+"use client!"
+
+import React, { useEffect, useState } from "react"
+import axios from "axios"
 import {
   Grid,
   Typography,
@@ -12,16 +15,32 @@ import {
   Autocomplete,
   Box,
 } from "@mui/material"
+import { ToastContainer, toast } from "react-toastify"
+import { useRouter } from "next/router"
+import { AUTH_API } from "@/components/utils/serverURL"
 import CustomSwitch from "../CustomSwitch"
 
+
 const ChatbotForm = ({ bot }) => {
-  const [avatarUrl, setAvatarUrl] = useState(null)
+  const [name, setName] = useState("")
+  const [active, setActive] = useState(false)
+  const [knowledgeBase, setKnowleBase] = useState("")
+  const [avatar, setAvatar] = useState(null)
+  const [avatarPreview, setAvatarPreview] = useState(null)
   const [timeFrom, setTimeFrom] = useState("09:00")
   const [timeUntil, setTimeUntil] = useState("17:00")
   const [anchorEl, setAnchorEl] = useState(null)
   const [themeColor, setThemeColor] = useState("#1976D2")
+  const [isLoading, setIsLoading] = useState(false);
+  const [bases, setBases] = useState([])
+  const [knowledgeBases, setKnowledgeBases] = useState([])
+
+  const router = useRouter()
+  const [index, setIndex] = useState(0)
+  const [userId, setUserId] = useState(null)
 
   console.log("Editing Bot:", bot)
+
   const handleColorButtonClick = (event) => {
     setAnchorEl(event.currentTarget)
   }
@@ -52,26 +71,79 @@ const ChatbotForm = ({ bot }) => {
     "#000000",
   ]
 
-  const knoweldgebases = [
-    "Knowledge Base 1",
-    "Knowledge Base 2",
-    "Knowledge Base 3",
-    "Knowledge Base 4",
-    "Knowledge Base 5",
-    "Knowledge Base 6",
-  ]
+   // Fetch knowledge bases when component mounts
+  React.useEffect(() => {
+    setIsLoading(true)
+    const userID = localStorage.getItem('userID');
+    setUserId(userID)
+     const requestOptions = {
+      headers: new Headers({
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': "1",
+      })
+    };
+
+    if (userID) {
+      fetch(`${AUTH_API.GET_KNOWLEDGE_BASES}?userId=${userID}`, requestOptions)
+        .then(response => response.json())
+        .then((data) => {
+          setBases(data)
+          console.log("bases", data)
+          setIsLoading(false)
+        })
+
+        .catch(error => {
+          console.error('Error fetching knowledge bases:', error);
+          setIsLoading(false);
+        });
+    }
+    if (bot!=='-1') {
+      setIsLoading(true);
+
+      fetch(`${AUTH_API.GET_CHATBOT}?botId=${bot}`, requestOptions)
+        .then(response => response.json())
+        .then(data => {
+          console.log("Bot info >>>>.>",data)
+          setName(data.name)
+          setActive(data.active)
+          setKnowleBase(data.knowledge_base)
+          setAvatarPreview(data.avatar)
+          setTimeFrom(data.start_time)
+          setTimeUntil(data.end_time)
+          console.log("bases", data)
+          setIsLoading(false);
+        })
+        .catch(error => {
+          console.error('Error fetching knowledge bases:', error);
+          setIsLoading(false);
+        });
+    }
+  }, [bot]); // Empty dependency array means this effect will only run once after the initial render
+
+
+  useEffect(() => {
+    if (bases) {
+      setKnowledgeBases(bases.map(base => base.name))
+    }
+  }, [bases ? bases.length : undefined])
 
   const handleAvatarChange = (event) => {
     const file = event.target.files && event.target.files[0]
+    setAvatar(file)
     const reader = new FileReader()
 
     reader.onload = () => {
-      setAvatarUrl(reader.result)
+      setAvatarPreview(reader.result)
     }
 
     if (file) {
       reader.readAsDataURL(file)
     }
+  }
+
+  const handleSwitchChange = () => {
+    setActive((prevActive) => !prevActive) // Toggle the value of active
+    console.log(active)
   }
 
   const handleTimeFromChange = (event) => {
@@ -82,12 +154,74 @@ const ChatbotForm = ({ bot }) => {
     setTimeUntil(event.target.value)
   }
 
+  const handleNameChange = (event) => {
+    setName(event.target.value)
+  }
+
+  const handleKnowledgeBaseChange = (value) => {
+    // Find the index of the selected value in the bases array
+    const selectedIndex = bases.findIndex(base => base.name === value);
+
+    // Check if a matching base was found
+    if (selectedIndex !== -1) {
+      // Set the name of the knowledge base
+      setKnowleBase(bases[selectedIndex].name);
+      // Update the index state with the found index
+      setIndex(selectedIndex);
+    } else {
+      // Handle the case where no matching base was found
+      console.error('No matching base found for the selected value:', value);
+    }
+  }
+
+  const handleSubmit = async () => {
+    const formData = new FormData()
+    formData.append("name", name)
+    formData.append("avatar", avatar)
+    formData.append("color", themeColor)
+    formData.append("active", (active !== undefined ? active.toString() : "false"));
+    formData.append("start_time", timeFrom)
+    formData.append("end_time", timeUntil)
+    formData.append("knowledge_base", bases[index].unique_id)
+    formData.append("user_id", userId)
+    
+    if (!name || !knowledgeBase) {
+      toast.error("Name and Knowledge Base are required.", { position: toast.POSITION.TOP_RIGHT })
+      return;
+    }
+    try {
+      let API_URL = ''
+      if (bot!=="-1"){
+        API_URL = `${AUTH_API.UPDATE_CHATBOT}?botId=${bot}`
+      } else {
+        API_URL = AUTH_API.CREATE_BOT
+      }
+      const response = await axios.post(API_URL, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      console.log("Success:", response.data)
+      toast.success("Successulfy Created!", { position: toast.POSITION.TOP_RIGHT })
+      router.push('/chatbot')
+    } catch (error) {
+      console.error("Error uploading:", error)
+    }
+  }
+  const handleCancelClick = () => {
+    router.push('/chatbot')
+  }
+
+  if (isLoading){
+    return <div>Loading...</div>
+  }
+
   return (
     <div className="w-full h-full mt-10">
       <Grid container spacing={1} justifyContent="start" alignItems="center">
         <Grid item xs={12} className="w-full ml-1">
           <Typography variant="h5" align="left">
-            Chatbot Peter
+            Chatbot
           </Typography>
         </Grid>
         <div className="bg-none w-full rounded-lg p-4 flex flex-col gap-4 mt-1">
@@ -98,7 +232,13 @@ const ChatbotForm = ({ bot }) => {
               </Typography>
             </Grid>
             <Grid item sm={12} md={4}>
-              <Input fullWidth inputProps={{ "aria-label": "description" }} disableUnderline />
+              <Input
+                fullWidth
+                inputProps={{ "aria-label": "description" }}
+                disableUnderline
+                value={name}
+                onChange={handleNameChange}
+              />
             </Grid>
           </Grid>
           <Grid container direction="row" spacing={1} alignItems="center" className="mt-1">
@@ -122,9 +262,9 @@ const ChatbotForm = ({ bot }) => {
                   </Typography>
                 </Button>
               </label>
-              {avatarUrl && (
+              {avatarPreview && (
                 <div className="flex flex-col justify-center items-center">
-                  <Avatar src={avatarUrl} sx={{ width: 70, height: 70, objectFit: "cover" }} />
+                  <Avatar src={avatarPreview} sx={{ width: 70, height: 70, objectFit: "cover" }} />
                 </div>
               )}
             </Grid>
@@ -157,7 +297,7 @@ const ChatbotForm = ({ bot }) => {
           </Grid>
           <Grid container direction="row" spacing={1} alignItems="center" className="mt-1">
             <Grid item alignItems="start" className="mr-3">
-              <CustomSwitch />
+              <CustomSwitch value={active}  onChange={handleSwitchChange} />
             </Grid>
           </Grid>
           <Grid container direction="row" spacing={1} alignItems="center" className="mt-2">
@@ -181,8 +321,10 @@ const ChatbotForm = ({ bot }) => {
             </Typography>
             <Autocomplete
               disablePortal
+              value={knowledgeBase}
               id="knowledge_base"
-              options={knoweldgebases}
+              options={knowledgeBases}
+              onChange={(_, value) => handleKnowledgeBaseChange(value)}
               sx={{ width: 300 }}
               renderInput={(params) => <TextField {...params} />}
             />
@@ -193,6 +335,7 @@ const ChatbotForm = ({ bot }) => {
               color="primary"
               className="bg-[#fa6374] w-24 h-10"
               sx={{ textTransform: "none" }}
+              onClick={handleCancelClick}
             >
               Cancel
             </Button>
@@ -201,12 +344,14 @@ const ChatbotForm = ({ bot }) => {
               color="primary"
               className="bg-[#00d7ca] w-24 h-10 ml-2"
               sx={{ textTransform: "none" }}
+              onClick={handleSubmit}
             >
               Save
             </Button>
           </Box>
         </div>
       </Grid>
+      <ToastContainer />
     </div>
   )
 }

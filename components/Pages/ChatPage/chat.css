@@ -1,0 +1,27 @@
+.chat-container {
+    @apply relative overflow-auto flex-grow flex-col mt-2 mx-1;
+}
+
+.message {
+    @apply absolute p-2 rounded-lg;
+}
+
+.bot-message {
+    @apply bg-blue-500 text-white left-0;
+}
+
+.user-message {
+    @apply bg-gray-200 right-0;
+}
+
+.message-content {
+    @apply flex items-center gap-2;
+}
+
+.message.MuiAvatar-root {
+    @apply absolute top-0;
+}
+
+.message.MuiTypography-root {
+    @apply mt-1;
+}

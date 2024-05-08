@@ -36,13 +36,15 @@ const Android12Switch = styled(Switch)(({ theme }) => ({
   },
 }))
 
-export default function CustomizedSwitches() {
+export default function CustomizedSwitches({value, onChange }) {
   return (
     <FormControlLabel
-      control={<Android12Switch defaultChecked />}
+      control={<Android12Switch checked={value}/>}
       label="Active"
+      value={value}
       labelPlacement="start"
       className="ml-0"
+      onChange={onChange}
     />
   )
 }

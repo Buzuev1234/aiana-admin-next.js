@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React from "react";
 import {
   Grid,
   Typography,
@@ -9,51 +9,45 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
-  TextField,
-} from "@mui/material"
-import CloudUploadIcon from "@mui/icons-material/CloudUpload"
-import DeleteIcon from "@mui/icons-material/Delete"
-import InfoIcon from "@mui/icons-material/InfoRounded"
+} from "@mui/material";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import DeleteIcon from "@mui/icons-material/Delete";
+import InfoIcon from "@mui/icons-material/InfoRounded";
 
-const Document = () => {
-  const [documents, setDocuments] = useState([])
-  const [nameInputValue, setNameInputValue] = useState("")
 
-  const handleDocumentChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const fileList = event.target.files
-    const allowedTypes = [
-      "application/pdf",
-      "application/msword",
-      "text/plain",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ]
+// interface DocumentObject {
+//  created_at: string;
+//  filename: string;
+//  id: number;
+//  type: string;
+//  unique_id: string;
+// }
 
-    const newDocs = Array.from(fileList).filter((file) => allowedTypes.includes(file.type))
+const Document = ({documents, setDocuments, setFiles}) => {
+  
 
-    setDocuments([...documents, ...newDocs])
-  }
+  const handleDocumentChanged = (event) => {
+     const fileList = event.target.files;
+     setFiles(Array.from(fileList));
+    const newDocs = Array.from(fileList).map((file: File) => ({
+      created_at: new Date().toISOString(),
+      filename: file.name,
+      id: -1,
+      type: file.type,
+      unique_id: "",
+    }))
+    setDocuments([...documents, ...newDocs]);
+  };
 
   const handleDeleteDocument = (index) => {
-    const updatedDocuments = documents.filter((doc, i) => i !== index)
-    setDocuments(updatedDocuments)
-  }
+    const updatedDocuments = documents.filter((_, i) => i !== index);
+    setDocuments(updatedDocuments);
+  };
+
+  
 
   return (
-    <Paper elevation={3} className="w-[700px] h-full p-5">
-      <Grid container spacing={2} className="mt-2">
-        <Grid item xs={4} className="flex justify-end items-center">
-          <Typography>Name:</Typography>
-        </Grid>
-        <Grid item xs={6}>
-          <TextField
-            type="text"
-            value={nameInputValue}
-            onChange={(e) => setNameInputValue(e.target.value)}
-            className="w-full"
-            id="urlInput"
-          />
-        </Grid>
-      </Grid>
+    <Paper elevation={3} className="w-[700px] h-[90%] p-5 mt-20 overflow-y-auto">
       <Grid container className="p-5">
         <Typography className="bg-[#e6f2ff] w-full mr-5 ml-5 p-3" sx={{ lineHeight: "2" }}>
           <InfoIcon className="text-[#33adff] mr-2 mb-1" />
@@ -75,7 +69,7 @@ const Document = () => {
             </Typography>
             <input
               type="file"
-              accept=".pdf,.doc,.txt,.docx"
+              accept=".pdf,.txt"
               onChange={handleDocumentChanged}
               multiple
               style={{ display: "none" }}
@@ -87,8 +81,8 @@ const Document = () => {
         <Grid item xs={8}>
           <List className="h-[300px] overflow-y-auto border-solid border border-gray-300 rounded-md mt-5 p-3">
             {documents.map((doc, index) => (
-              <ListItem key={doc.name} className="border-b border-gray-300">
-                <ListItemText primary={doc.name} />
+              <ListItem key={doc.id} className="border-b border-gray-300">
+                <ListItemText primary={doc.filename} />
                 <ListItemSecondaryAction>
                   <IconButton
                     edge="end"
@@ -102,11 +96,7 @@ const Document = () => {
             ))}
           </List>
         </Grid>
-        <Grid item xs={4} className="flex justify-center">
-          <Button className="bg-[#0099ff]" variant="contained">
-            Save
-          </Button>
-        </Grid>
+        
       </Grid>
     </Paper>
   )

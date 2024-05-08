@@ -1,23 +1,53 @@
-import * as React from "react"
-import { Box, Typography } from "@mui/material"
-import Button from "@mui/material/Button"
-import router from "next/router"
+import * as React from "react";
+import { Box, Typography } from "@mui/material";
+import Button from "@mui/material/Button";
+import router from "next/router";
+import { AUTH_API } from "@/components/utils/serverURL"
 
-const Chatbots = () => {
+const KnowledgeBase = () => {
+  const [bases, setBases] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
   const handleAddRow = () => {
-    router.push(`/knowledge/edit?bot=0`)
+    router.push(`/knowledge/edit?baseId=-1`);
   }
 
-  function createData(id: number, name: string, time: string) {
-    return { id, name, time }
-  }
+  // Fetch knowledge bases when component mounts
+  React.useEffect(() => {
+    setIsLoading(true)
+    const userID = localStorage.getItem('userID');
+     const requestOptions = {
+      headers: new Headers({
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': "1",
+      })
+    };
+    if (userID) {
+      fetch(`${AUTH_API.GET_KNOWLEDGE_BASES}?userId=${userID}`, requestOptions)
+        .then(response => response.json())
+        .then(data => {
+          setBases(data);
+          setIsLoading(false);
+        })
+        .catch(error => {
+          console.error('Error fetching knowledge bases:', error);
+          setIsLoading(false);
+        });
+    }
+  }, []); // Empty dependency array means this effect will only run once after the initial render
 
-  const bases = [createData(1, "KB Daytime", "09:00 - 17:00")]
+  const handleEditClick = (baseId) => {
+     router.push(`/knowledge/edit?baseId=${baseId}`);
+
+  }
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <>
       <div className="w-full h-[50px] flex items-center justify-center pt-[24px] mb-[10px] text-[28px]">
-        <Typography className="text-[20px] w-2/3">Chatbots</Typography>
+        <Typography className="text-[20px] w-2/3">Knowledge Base</Typography>
         <Box sx={{ width: "30%", height: "fit-content" }}>
           <Button
             onClick={handleAddRow}
@@ -42,6 +72,7 @@ const Chatbots = () => {
                 type="button"
                 className="w-12 h-8 text-[12px] my-1 rounded-sm bg-[#00D7CA] text-white"
                 style={{ textTransform: "none" }}
+                onClick={()=>handleEditClick(base.id)}
               >
                 Edit
               </button>
@@ -50,7 +81,7 @@ const Chatbots = () => {
         ))}
       </div>
     </>
-  )
+  );
 }
 
-export default Chatbots
+export default KnowledgeBase;

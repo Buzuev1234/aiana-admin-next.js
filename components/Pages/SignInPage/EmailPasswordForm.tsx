@@ -10,51 +10,48 @@ import {
   Link,
 } from "@mui/material"
 import axios from "axios"
+import { ToastContainer, toast } from "react-toastify"
 import router from "next/router"
 import { AUTH_API } from "@/components/utils/serverURL"
 
 const EmailPasswordForm = () => {
-  const [errorMessage, setErrorMessage] = React.useState("")
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
   const handleAuth = () => {
-    setErrorMessage("")
     if (email === "") {
-      setErrorMessage("Email is required")
-      alert("Email is required")
-      return false
+      return false;
     }
     if (password === "") {
-      setErrorMessage("Password is required")
-      alert("Password is required")
-      return false
+      toast.error("Password is required!", { position: toast.POSITION.TOP_RIGHT });
+      return false;
     }
 
     axios
-      .post(AUTH_API.LOGIN, { email: email, password: password })
-      .then((response) => {
-        console.log(response)
-        if (response.status === 200) {
-          router.push("/admin")
-          return
+      .post(AUTH_API.LOGIN, { email, password })
+      .then(({ data }) => { // Use object destructuring here
+        if (data) {
+          console.log("Login  >>>>>>>>>", data.userID);
+          localStorage.setItem("userID", data.userID);
+          router.push("/admin");
+          return;
         }
-        console.log(response.data.error)
-        setErrorMessage("Invalide credentials!")
-        alert("Invalide credentials!")
+        console.log(data.error);
+        alert("Invalid credentials!");
       })
-      .catch((error) => {
-        console.log("Here >>>>>", error)
-        setErrorMessage("Invalide email or password!")
-        alert("Invalide email or password!")
-      })
-    return true
+      .catch(() => {
+        toast.error("Invalid email or password!", { position: toast.POSITION.TOP_RIGHT });
+      });
+    return true;
+  };
+  /* eslint-disable */
+  const handleEmailChange = ({ target: { value } }) => {
+    setEmail(value)
   }
-  const handleEmailChange = (event) => {
-    setEmail(event.target.value)
+
+  const handlePasswordChange = ({ target: { value } }) => {
+    setPassword(value)
   }
-  const handlePasswordChange = (event) => {
-    setPassword(event.target.value)
-  }
+  /* eslint-enable */
 
   return (
     <Container className="w-[450px] bg-gray-100 flex flex-col justify-center items-center">
@@ -104,7 +101,7 @@ const EmailPasswordForm = () => {
               <div className="mt-4">
                 <Link
                   underline="none"
-                  href="https://test2.aiana.io/auth-recoverpw"
+                  href="/forgot"
                   variant="body2"
                   className="text-muted text-gray-500"
                 >
@@ -133,11 +130,12 @@ const EmailPasswordForm = () => {
                 </Typography>
               </div>
             </Box>
+            <ToastContainer />
           </CardContent>
         </Card>
       </div>
-      <div className="text-center text-muted mt-4 absolute bottom-5">
-        <Typography variant="body2" color="textSecondary" className="text-white-50">
+      <div className="text-center text-muted mt-4 absolute bottom-[100px]">
+        <Typography variant="body2" color="textSecondary" className="text-gray-300">
           © {new Date().getFullYear()} aiana
         </Typography>
       </div>

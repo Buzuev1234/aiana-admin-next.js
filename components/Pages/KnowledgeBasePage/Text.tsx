@@ -14,10 +14,10 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete"
 import InfoIcon from "@mui/icons-material/InfoRounded"
 
-const Text = () => {
+const Text = ({questionAnswers, setQuestionAnswers}) => {
   const [questionInputValue, setQuestionInputValue] = useState("")
   const [answerInputValue, setAnswerInputValue] = useState("")
-  const [questionAnswers, setQuestionAnswers] = useState([])
+ 
 
   const handleQAAdd = () => {
     if (questionInputValue && answerInputValue) {
@@ -38,7 +38,7 @@ const Text = () => {
   }
 
   return (
-    <Paper elevation={3} className="w-[700px] h-full p-5">
+    <Paper elevation={3} className="w-[700px] h-[90%] p-5 mt-20">
       <Grid container className="p-5">
         <Typography className="bg-[#e6f2ff] w-full mr-5 ml-5 p-3" sx={{ lineHeight: "2" }}>
           <InfoIcon className="text-[#33adff] mr-2 mb-1" />
@@ -91,11 +91,6 @@ const Text = () => {
               </ListItem>
             ))}
           </List>
-        </Grid>
-        <Grid item xs={4} className="flex justify-center">
-          <Button className="bg-[#0099ff]" variant="contained">
-            Save
-          </Button>
         </Grid>
       </Grid>
     </Paper>
