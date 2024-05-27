@@ -26,9 +26,9 @@ export async function loginUser(email:string, password:string) {
 
     const data = await response.json();
     if (response.ok) {
-        const { token, userId } = data;
+        const { access_token, userId } = data;
         const expiryTime = new Date().getTime() + (15 * 60 * 1000); // Current time + 15 mins
-        localStorage.setItem('token', token);
+        localStorage.setItem('token', access_token);
         localStorage.setItem('userID', userId);
         localStorage.setItem('token_expiry', expiryTime.toString()); // Store expiration time
     } else {
